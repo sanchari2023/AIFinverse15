@@ -60,7 +60,7 @@ export default function Live_Alerts_US() {
   const [, setLocation] = useLocation();
 
   // ADD THESE STATES for dynamic alerts
-  const [alertsData, setAlertsData] = useState<any[]>([]); // Combined alerts data (ONLY 10 LATEST)
+  const [alertsData, setAlertsData] = useState<any[]>([]); // Combined alerts data (ONLY 10 LATEST TODAY'S ALERTS)
   const [archivedAlerts, setArchivedAlerts] = useState<any[]>([]);
   const [expandedArchivedAlert, setExpandedArchivedAlert] = useState<number | null>(null);
   
@@ -161,18 +161,35 @@ export default function Live_Alerts_US() {
     );
   };
 
-  // Helper function to split alerts into center and archive
+  // ============================================
+  // FIXED: Helper function to split alerts into center and archive
+  // Center: MAX 10 alerts from TODAY only (newest first)
+  // Archive: All older alerts + excess today alerts beyond first 10
+  // ============================================
   const splitAlertsIntoCenterAndArchive = (allAlerts: any[]) => {
-    // Sort by timestamp (newest first)
-    const sortedAlerts = [...allAlerts].sort((a, b) => 
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Separate alerts by date
+    const todayAlerts = allAlerts.filter(alert => alert.date === today);
+    const olderAlerts = allAlerts.filter(alert => alert.date !== today);
+    
+    // Sort both arrays by timestamp (newest first)
+    const sortedTodayAlerts = [...todayAlerts].sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
     
-    // Take first 10 for center
-    const centerAlerts = sortedAlerts.slice(0, 10);
+    const sortedOlderAlerts = [...olderAlerts].sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
     
-    // Remaining go to archive (if any)
-    const archiveAlerts = sortedAlerts.slice(10);
+    // Center section: FIRST 10 of today's alerts (newest first)
+    const centerAlerts = sortedTodayAlerts.slice(0, 10);
+    
+    // Archive section: 
+    // 1. All older alerts (from previous dates)
+    // 2. PLUS any excess today alerts beyond the first 10
+    const excessTodayAlerts = sortedTodayAlerts.slice(10);
+    const archiveAlerts = [...sortedOlderAlerts, ...excessTodayAlerts];
     
     return { centerAlerts, archiveAlerts };
   };
@@ -255,13 +272,10 @@ export default function Live_Alerts_US() {
       // 3. Combine all alerts
       const allAlerts = [...watchlistLiveAlerts, ...watchlistArchived];
       
-      // 4. Split into center and archive
+      // 4. Split into center and archive (NOW WITH CORRECT LOGIC)
       const { centerAlerts, archiveAlerts } = splitAlertsIntoCenterAndArchive(allAlerts);
       
       // 5. Group archive alerts by date
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Group by date
       const groupedByDate = archiveAlerts.reduce((groups: any, alert) => {
         const date = alert.date;
         if (!groups[date]) {
@@ -324,7 +338,7 @@ export default function Live_Alerts_US() {
           // Combine all alerts
           const allAlerts = [...watchlistLiveAlerts, ...watchlistArchived];
           
-          // Split into center and archive
+          // Split into center and archive (USING UPDATED FUNCTION)
           const { centerAlerts, archiveAlerts } = splitAlertsIntoCenterAndArchive(allAlerts);
           
           // Group archive alerts by date
@@ -718,7 +732,9 @@ export default function Live_Alerts_US() {
     }
   }, [archiveSearchQuery, archivedAlerts, watchlist]);
 
+  // ============================================
   // MAIN LOAD FUNCTION - Load watchlist and alerts
+  // ============================================
   useEffect(() => {
     const loadUserPreferences = async () => {
       try {
@@ -826,7 +842,7 @@ export default function Live_Alerts_US() {
                 // Combine all alerts
                 const allAlerts = [...watchlistLiveAlerts, ...watchlistArchived];
                 
-                // Split into center and archive
+                // Split into center and archive (USING UPDATED FUNCTION)
                 const { centerAlerts, archiveAlerts } = splitAlertsIntoCenterAndArchive(allAlerts);
                 
                 // Group archive alerts by date
@@ -890,7 +906,7 @@ export default function Live_Alerts_US() {
                 watchlistSymbols.includes(alert.stock)
               );
               
-              // Split into center and archive
+              // Split into center and archive (USING UPDATED FUNCTION)
               const { centerAlerts, archiveAlerts } = splitAlertsIntoCenterAndArchive(watchlistOnlyAlerts);
               
               // Group archive alerts by date
@@ -932,7 +948,7 @@ export default function Live_Alerts_US() {
           watchlistSymbols.includes(alert.stock)
         );
         
-        // Split into center and archive
+        // Split into center and archive (USING UPDATED FUNCTION)
         const { centerAlerts, archiveAlerts } = splitAlertsIntoCenterAndArchive(watchlistOnlyAlerts);
         
         // Group archive alerts by date
@@ -1531,7 +1547,7 @@ export default function Live_Alerts_US() {
             </div>
           </aside>
 
-          {/* CENTER ALERTS - SHOW ONLY LATEST 10 ALERTS */}
+          {/* CENTER ALERTS - SHOW ONLY TODAY'S ALERTS (MAX 10) */}
           <section className="col-span-12 md:col-span-6 space-y-6">
             <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 border border-slate-700 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
@@ -1546,6 +1562,14 @@ export default function Live_Alerts_US() {
                       {filteredAlerts.length} alert{filteredAlerts.length !== 1 ? 's' : ''}
                     </span>
                   )}
+                </div>
+                <div className="text-xs text-slate-400">
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })}
                 </div>
               </div>
 
@@ -1660,6 +1684,13 @@ export default function Live_Alerts_US() {
                       )}
                     </div>
                   ))}
+                  
+                  {/* Show message if there are more today's alerts in archive */}
+                  {allTodayAlerts.length > 10 && (
+                    <div className="text-center text-xs text-cyan-400/70 py-2">
+                      + {allTodayAlerts.length - 10} more today's alerts in archive
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1724,7 +1755,6 @@ export default function Live_Alerts_US() {
                       key={stock.base_symbol} 
                       
                     >
-                      
                       
                     </div>
                   ))
@@ -2147,4 +2177,3 @@ export default function Live_Alerts_US() {
     </div>
   );
 }
-
