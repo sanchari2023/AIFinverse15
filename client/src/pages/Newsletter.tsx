@@ -784,25 +784,14 @@ useEffect(() => {
                       AI Giveth and AI Taketh Away
                     </h3>
                     <p className="text-gray-300 mt-4 text-sm leading-relaxed">
-                      Started late in 2022 with the advent of ChatGPT, the AI bull run is looking fragile as Anthropic keeps progressing at Warp Speed. Is the end near?
+                      Started late in 2022 with the advent of ChatGPT, the AI bull run is looking fragile as Anthropic keeps progressing at Warp Speed. Is the end near?The bull run origin could be dated back to late 2022 when ChatGPT was launched. Few months later, when Nvidia gave a mind-blowing guidance for the first time, that AI-led bull run took off, where we have seen Nvidia go up more than 20x in a span of four years, and a lot of the ecosystem players which have done even better (look at WD, SanDisk for example).
+                      But that has come at the cost of software makers.That's even more visible especially over the last week. As markets are becoming jittery, unable to make new highs, and AI keeps progressing, the software makers are taking it on their chin. Investors aren't even differentiating. It seems if you're a software maker of any kind, they are rushing out of the door.
                     </p>
                   </div>
 
                   {expandedArticle2 && (
                     <div className="mt-8 text-gray-300 text-sm leading-relaxed space-y-8">
-                      <div className="space-y-4">
-                        <p className="leading-relaxed">
-                          The bull run origin could be dated back to late 2022 when ChatGPT was launched. Few months later, when Nvidia gave a mind-blowing guidance for the first time, that AI-led bull run took off, where we have seen Nvidia go up more than 20x in a span of four years, and a lot of the ecosystem players which have done even better (look at WD, SanDisk for example).
-                        </p>
-                        
-                        <p className="leading-relaxed">
-                          But that has come at the cost of software makers.
-                        </p>
-                        
-                        <p className="leading-relaxed">
-                          That's even more visible especially over the last week. As markets are becoming jittery, unable to make new highs, and AI keeps progressing, the software makers are taking it on their chin. Investors aren't even differentiating. It seems if you're a software maker of any kind, they are rushing out of the door.
-                        </p>
-                      </div>
+                      
 
                       {/* Graph Images - First Row */}
                       <div className="my-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1154,17 +1143,14 @@ useEffect(() => {
                     </h3>
                     <p className="text-gray-300 mt-4 text-sm leading-relaxed">
                       In my recent discussions with a lot of people, I have repeatedly said, the Indian stock market underperformance isn't about the MAGA US Trade deal. Here's why: 1. The last I checked, India exports $80B to the US, out of which $50B was under the 50% tariff. If India grows at 7.5% per year, we add $300B.
+                      2. If it was about the US trade deal, then why are stocks from hotels, QSR, real estate, hospitals, defense down? Why's Eternal down from 305 to 250 in a matter of 3-4 days? Godrej Properties down from 2100 odd to below 1500 in a matter of couple weeks.
+                        
                     </p>
                   </div>
 
                   {expandedArticle3 && (
                     <div className="mt-8 text-gray-300 text-sm leading-relaxed space-y-8">
-                      <div className="space-y-4">
-                        <p className="leading-relaxed">
-                          2. If it was about the US trade deal, then why are stocks from hotels, QSR, real estate, hospitals, defense down? Why's Eternal down from 305 to 250 in a matter of 3-4 days? Godrej Properties down from 2100 odd to below 1500 in a matter of couple weeks.
-                        </p>
-                      </div>
-
+                    
                       {/* Graph Images */}
                       <div className="my-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Graph 1 */}
@@ -1197,8 +1183,8 @@ useEffect(() => {
                             onMouseEnter={() => setHoveredImage('graph2')}
                             onMouseLeave={() => setHoveredImage(null)}
                           >
-                            <img
-                              src="/images/graph2.jpg"
+                           <img
+                              src="/images/graph22.jpg"
                               alt="Indian market chart 2"
                               className="w-full rounded-lg"
                             />
@@ -1402,15 +1388,13 @@ useEffect(() => {
                     </h3>
                     <p className="text-gray-300 mt-4 text-sm leading-relaxed ">
                       Trust me you won't know why that name unless you trade it / watch it closely, and so I did. In the below article you will find two names - NATURALGAS (capital.com) and UNG (NYSE ARCA ETP / ETF). UNG tracks NATURALGAS with some error, almost. But the experience I am about to tell you, it didn't.
+                      First things first the price of NATURALGAS dances to the tunes of weather forecasts, projected heating days and reported inventory/ withdrawal so far. However, its importance in powering data centers is set to go up as they demand more and more power while nuclear power plants are far away from set up / production. The fundamentals are changing and soon, the price movement might start to reflect them.
                     </p>
                   </div>
 
                   {expandedArticle4 && (
                     <div className="mt-8 text-gray-300 text-sm leading-relaxed space-y-8">
                       <div className="space-y-4">
-                        <p className="leading-relaxed">
-                          First things first the price of NATURALGAS dances to the tunes of weather forecasts, projected heating days and reported inventory/ withdrawal so far. However, its importance in powering data centers is set to go up as they demand more and more power while nuclear power plants are far away from set up / production. The fundamentals are changing and soon, the price movement might start to reflect them.
-                        </p>
                         
                         <p className="leading-relaxed">
                           Now, back to the story. On Dec 30, 2025 (last year), I had some long position in UNG at $13.8 when NATURALGAS was $4.1. LONG story SHORT, it went down below 10 in a matter of roughly 2 weeks, with the underlying falling below $2.8. And I averages / DCA'd like no tomorrow, looking at every support and adding to my position, till I had cash available, bringing me to an average of almost $12 and a deficit of 20%. Then on Monday the 19th, things turned out with forecast of a artic wave emerging and taking NATURALGAS futures 16% higher while UNG wasn't trading on market holiday. The move continued upward on Tuesday but UNG has a gap of about 8% vs the underlying's 2 day performance largely attributed to the way the instrument is structured, they need live markets to make changes to their positioning. Look at below chart to tell the story.
@@ -1609,6 +1593,8 @@ useEffect(() => {
                     </h3>
                     <p className="text-gray-300 mt-4 text-sm leading-relaxed">
                       I started the year on a wheelchair and it took a while to get going again, 4.5 months to get back to cricket and ironically at the same ground where "tragedy" struck. The markets had their wheelchair moment in April when Trump threw them under the "tariff" bus.
+                       As I keep growing, I realize markets are nothing but a reflection of us - our emotions, our fear, our greed and therefore, has very similar events to our life - jubilation (bull run), heart breaks (bear market), flash crash (accident) and then recovery (coz humans are built to do that!)
+                        
                     </p>
                   </div>
 
@@ -1616,9 +1602,6 @@ useEffect(() => {
                     <div className="mt-8 text-gray-300 text-base leading-relaxed space-y-8">
                       {/* FULL ARTICLE CONTENT */}
                       <div className="space-y-4">
-                        <p className="text-gray-300 mt-4 text-sm leading-relaxed">
-                          As I keep growing, I realize markets are nothing but a reflection of us - our emotions, our fear, our greed and therefore, has very similar events to our life - jubilation (bull run), heart breaks (bear market), flash crash (accident) and then recovery (coz humans are built to do that!)
-                        </p>
                         
                         <p className="text-gray-300 mt-4 text-sm leading-relaxed">
                           I bounced back a few weeks post my comeback on the cricket ground and so did the markets. Here's proof of a catch that brought me back from the bottom ;)
