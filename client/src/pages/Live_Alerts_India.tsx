@@ -122,10 +122,11 @@ const [cachedData, setCachedData] = useState(() => {
 
 
   // Add this helper function to get the correct AlertBot URL
+// Add this helper function to get the correct AlertBot URL
 const getAlertBotUrl = () => {
-  // In production, use the EC2 instance directly
+  // In production, use relative path through Nginx proxy
   if (import.meta.env.PROD) {
-    return 'http://34.226.94.121:5000';
+    return '/alertbot';  // ✅ CORRECT - This will use HTTPS through your domain
   }
   // In development, use the proxy
   return '/alertbot';
