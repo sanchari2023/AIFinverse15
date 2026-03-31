@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -104,6 +104,140 @@ const [cachedData, setCachedData] = useState(() => {
   }
   return null;
 });
+
+// bot new 
+
+  // AlertBot states
+  const [chatInput, setChatInput] = useState("");
+   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
+  const [alertBotData, setAlertBotData] = useState<any>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
+  const [lifoFilter, setLifoFilter] = useState('ALL');
+  const [patFilter, setPatFilter] = useState('ALL');
+  const [patSearch, setPatSearch] = useState('');
+  const [activePanel, setActivePanel] = useState<string | null>(null);
+
+   
+    // Fetch AlertBot data
+     
+  const fetchAlertBotData = async () => {
+    try {
+      const response = await fetch("http://34.226.94.121:5000/api/alerts");
+      if (response.ok) {
+        const data = await response.json();
+        setAlertBotData(data);
+        return data;
+      }
+    } catch (error) {
+      console.error("Failed to fetch alert data:", error);
+    }
+    return null;
+  };
+
+ 
+  // Send initial greeting when chat opens
+    // Send initial greeting when chat opens
+  useEffect(() => {
+    if (chatOpen && chatMessages.length === 0) {
+      // Send a trigger message to backend to get the greeting
+      const getInitialGreeting = async () => {
+        setIsChatLoading(true);
+        try {
+          const response = await fetch("http://34.226.94.121:5000/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              messages: [{ role: "user", content: "Hello" }] 
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const greeting = data.reply || "Hello! How can I help you?";
+            setChatMessages([{ role: "assistant", content: greeting }]);
+          } else {
+            // Fallback if backend fails
+            setChatMessages([{ 
+              role: "assistant", 
+              content: "👋 Hello! I'm AlertBot. Ask me about stocks, alerts, or market data." 
+            }]);
+          }
+        } catch (error) {
+          console.error("Failed to get greeting:", error);
+          setChatMessages([{ 
+            role: "assistant", 
+            content: "👋 Hello! I'm AlertBot. Ask me about stocks, alerts, or market data." 
+          }]);
+        } finally {
+          setIsChatLoading(false);
+        }
+      };
+      
+      getInitialGreeting();
+    }
+  }, [chatOpen]);
+  
+
+    // Send message to backend
+     // Send message to backend - UPDATE URL
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || isChatLoading) return;
+    
+    const userMessage = { role: "user", content: chatInput };
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput("");
+    setIsChatLoading(true);
+    
+    try {
+      const messagesToSend = [...chatMessages, userMessage];
+      const response = await fetch("http://34.226.94.121:5000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: messagesToSend })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get response");
+      }
+      
+      const data = await response.json();
+      const aiResponse = data.reply || "No response received.";
+      
+      setChatMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
+      
+      // Refresh data after chat
+      await fetchAlertBotData();
+      
+    } catch (error) {
+      console.error("Chat error:", error);
+      setChatMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: "⚠️ Network error. Please try again." 
+      }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+   const sendQuickQuestion = (question: string) => {
+    setChatInput(question);
+    setTimeout(() => sendChatMessage(), 100);
+  };
+
+  
+
+  // END New bot
+
+
+
+
+
+
+
+
+
 
   // 🔒 Registration check (simple & safe)
   const isRegistered = !!localStorage.getItem("userProfile");
@@ -2345,59 +2479,165 @@ const extractUrlFromMarkdown = (markdown: string) => {
         />
       </button>
 
-      {/* CHAT BOX */}
+            {/* CHAT BOX */}
+            {/* CHAT BOX */}
       {chatOpen && (
-        <div className="fixed bottom-24 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 shadow-2xl z-50 border border-cyan-500/20">
-          <div className="flex items-center justify-between mb-4">
+        <div className="fixed bottom-24 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl z-50 border border-cyan-500/20 flex flex-col overflow-hidden" style={{ height: '500px' }}>
+          <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800/50">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">N</span>
-                </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-400 rounded-full flex items-center justify-center">
-                  <div className="w-2 h-1 bg-white rounded-full"></div>
-                </div>
+  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+  </svg>
+</div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               </div>
               <div>
-                <h3 className="font-bold text-white">Nexo AI</h3>
-                <p className="text-xs text-cyan-400">AI Assistant</p>
+                <h3 className="font-bold text-white">AryaBot</h3>
+                <p className="text-xs text-cyan-400">AIFinverse</p>
               </div>
             </div>
-            <div className="text-xs px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full animate-pulse">
-              COMING SOON
-            </div>
+            <button 
+              onClick={() => setChatOpen(false)} 
+              className="text-slate-400 hover:text-white transition p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="h-36 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-700 rounded-xl bg-slate-900/50 p-5">
-            <div className="mb-4">
-              <div className="flex items-center justify-center gap-1 mb-3">
-                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
-              </div>
-              
-              <h4 className="text-cyan-300 font-medium mb-2">
-                Nexo is Learning the Markets
-              </h4>
-              <p className="text-cyan-400 font-semibold text-sm">
-                Launching Shortly!
-              </p>
-            </div>
-            
-            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 w-3/4 rounded-full animate-pulse"></div>
-            </div>
-          </div>
-
-          <Button 
-            onClick={() => setChatOpen(false)} 
-            className="w-full mt-4 bg-slate-700 hover:bg-slate-600 text-white transition-all"
+          {/* Chat Messages Area - FIXED RENDERING */}
+          <div 
+            ref={chatMessagesRef}
+            className="flex-1 overflow-y-auto p-4 space-y-3"
+            style={{ height: 'calc(100% - 120px)' }}
           >
-            Close Chat
-          </Button>
+            {chatMessages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}
+              >
+                {msg.role === 'assistant' && (
+  <div className="w-6 h-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+    </svg>
+  </div>
+)}
+                <div
+                  className={`rounded-xl px-3 py-2 max-w-[85%] text-sm ${
+                    msg.role === 'user'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                      : 'bg-slate-700/50 text-slate-200'
+                  }`}
+                >
+                  {msg.role === 'assistant' ? (
+                    <div 
+                      className="prose prose-invert prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ 
+                        __html: msg.content
+                          .replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-400">$1</strong>')
+                          .replace(/`([^`]+)`/g, '<code class="bg-black/30 px-1 rounded text-xs">$1</code>')
+                          .replace(/\n/g, '<br/>')
+                          .replace(/•/g, '<span class="text-cyan-400 mr-1">•</span>')
+                      }}
+                    />
+                  ) : (
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                  )}
+                </div>
+                {msg.role === 'user' && (
+  <div className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  </div>
+)}
+              </div>
+            ))}
+                       {isChatLoading && (
+              <div className="flex items-start gap-2">
+                <div className="w-6 h-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-white text-xs font-bold">AI</span>
+                </div>
+                <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="px-4 py-2 border-t border-slate-700 bg-slate-800/30">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => sendQuickQuestion("Show latest LIFO alerts")}
+                className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full hover:bg-cyan-500/20 hover:text-cyan-400 transition"
+              >
+                ⚡ LIFO
+              </button>
+              <button
+                onClick={() => sendQuickQuestion("Performance summary")}
+                className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full hover:bg-cyan-500/20 hover:text-cyan-400 transition"
+              >
+                📊 Performance
+              </button>
+              <button
+                onClick={() => sendQuickQuestion("Show top fractal support levels")}
+                className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full hover:bg-cyan-500/20 hover:text-cyan-400 transition"
+              >
+                🔷 Fractal S/R
+              </button>
+              <button
+                onClick={() => sendQuickQuestion("Where can I check earnings and TTM PE?")}
+                className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full hover:bg-cyan-500/20 hover:text-cyan-400 transition"
+              >
+                💰 Earnings
+              </button>
+            </div>
+          </div>
+
+          {/* Input Area */}
+          <div className="p-4 border-t border-slate-700 bg-slate-800/30">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !isChatLoading && chatInput.trim()) {
+                    e.preventDefault();
+                    sendChatMessage();
+                  }
+                }}
+                placeholder="Ask about stocks, levels, alerts..."
+                className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none"
+              />
+                            <button
+                onClick={sendChatMessage}
+                disabled={isChatLoading || !chatInput.trim()}
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-3 py-2 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition disabled:opacity-50"
+              >
+                {isChatLoading ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  "Send"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
+
+
+
+
+      
       {/* FOOTER */}
       <footer className="mt-20 py-4 bg-slate-1000/50 text-center text-sm text-slate-500">
         <div className="max-w-7xl mx-auto px-2 py-1 text-center">
