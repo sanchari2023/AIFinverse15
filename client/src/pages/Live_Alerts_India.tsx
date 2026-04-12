@@ -122,125 +122,297 @@ const [cachedData, setCachedData] = useState(() => {
 
 
   // Add this helper function to get the correct AlertBot URL
-// Add this helper function to get the correct AlertBot URL
-const getAlertBotUrl = () => {
-  // In production, use relative path through Nginx proxy
-  if (import.meta.env.PROD) {
-    return '/alertbot';  // ✅ CORRECT - This will use HTTPS through your domain
-  }
-  // In development, use the proxy
-  return '/alertbot';
-};
-   
-    // Fetch AlertBot data
-     
-  const fetchAlertBotData = async () => {
-  try {
-    const alertBotUrl = getAlertBotUrl();
-    const response = await fetch(`${alertBotUrl}/api/alerts`);
-    if (response.ok) {
-      const data = await response.json();
-      setAlertBotData(data);
-      return data;
-    }
-  } catch (error) {
-    console.error("Failed to fetch alert data:", error);
-  }
-  return null;
-};
-
+ // Add this helper function to get the correct AlertBot URL
+ const getAlertBotUrl = () => {
+   // In production, use relative path through Nginx proxy
+   if (import.meta.env.PROD) {
+     return '/alertbot';  // ✅ CORRECT - This will use HTTPS through your domain
+   }
+   // In development, use the proxy
+   return '/alertbot';
+ };
  
-  // Send initial greeting when chat opens
+     // AlertBot functions
+   const fetchAlertBotData = async () => {
+   try {
+     const alertBotUrl = getAlertBotUrl();
+     const response = await fetch(`${alertBotUrl}/api/alerts`);
+     if (response.ok) {
+       const data = await response.json();
+       setAlertBotData(data);
+       return data;
+     }
+   } catch (error) {
+     console.error("Failed to fetch alert data:", error);
+   }
+   return null;
+ };
+ 
+ 
+     // Send initial greeting when chat opens
    useEffect(() => {
-  if (chatOpen && chatMessages.length === 0) {
-    const getInitialGreeting = async () => {
-      setIsChatLoading(true);
-      try {
-        const alertBotUrl = getAlertBotUrl();
-        const response = await fetch(`${alertBotUrl}/api/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            messages: [{ role: "user", content: "Hello" }] 
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const greeting = data.reply || "Hello! How can I help you?";
-          setChatMessages([{ role: "assistant", content: greeting }]);
-        } else {
-          setChatMessages([{ 
-            role: "assistant", 
-            content: "👋 Hello! I'm AlertBot. Ask me about stocks, alerts, or market data." 
-          }]);
-        }
-      } catch (error) {
-        console.error("Failed to get greeting:", error);
-        setChatMessages([{ 
-          role: "assistant", 
-          content: "👋 Hello! I'm AlertBot. Ask me about stocks, alerts, or market data." 
-        }]);
-      } finally {
-        setIsChatLoading(false);
-      }
-    };
-    
-    getInitialGreeting();
-  }
-}, [chatOpen]);
-  
-
-    // Send message to backend
-     const sendChatMessage = async () => {
-  if (!chatInput.trim() || isChatLoading) return;
-  
-  const userMessage = { role: "user", content: chatInput };
-  setChatMessages(prev => [...prev, userMessage]);
-  setChatInput("");
-  setIsChatLoading(true);
-  
-  try {
-    const messagesToSend = [...chatMessages, userMessage];
-    const alertBotUrl = getAlertBotUrl();
-    const response = await fetch(`${alertBotUrl}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: messagesToSend })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to get response");
-    }
-    
-    const data = await response.json();
-    const aiResponse = data.reply || "No response received.";
-    
-    setChatMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
-    
-    // Refresh data after chat
-    await fetchAlertBotData();
-    
-  } catch (error) {
-    console.error("Chat error:", error);
-    setChatMessages(prev => [...prev, { 
-      role: "assistant", 
-      content: "⚠️ Network error. Please try again." 
-    }]);
-  } finally {
-    setIsChatLoading(false);
-  }
-};
-
+   if (chatOpen && chatMessages.length === 0) {
+     const getInitialGreeting = async () => {
+       setIsChatLoading(true);
+       try {
+         const alertBotUrl = getAlertBotUrl();
+         const response = await fetch(`${alertBotUrl}/api/chat`, {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ 
+             messages: [{ role: "user", content: "Hello" }] 
+           })
+         });
+         
+         if (response.ok) {
+           const data = await response.json();
+           const greeting = data.reply || "Hello! How can I help you?";
+           setChatMessages([{ role: "assistant", content: greeting }]);
+         } else {
+           setChatMessages([{ 
+             role: "assistant", 
+             content: "👋 Hello! I'm AlertBot. Ask me about stocks, alerts, or market data." 
+           }]);
+         }
+       } catch (error) {
+         console.error("Failed to get greeting:", error);
+         setChatMessages([{ 
+           role: "assistant", 
+           content: "👋 Hello! I'm AlertBot. Ask me about stocks, alerts, or market data." 
+         }]);
+       } finally {
+         setIsChatLoading(false);
+       }
+     };
+     
+     getInitialGreeting();
+   }
+ }, [chatOpen]);
+ 
+   const sendChatMessage = async () => {
+   if (!chatInput.trim() || isChatLoading) return;
+   
+   const userMessage = { role: "user", content: chatInput };
+   setChatMessages(prev => [...prev, userMessage]);
+   setChatInput("");
+   setIsChatLoading(true);
+   
+   try {
+     const messagesToSend = [...chatMessages, userMessage];
+     const alertBotUrl = getAlertBotUrl();
+     const response = await fetch(`${alertBotUrl}/api/chat`, {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({ messages: messagesToSend })
+     });
+     
+     if (!response.ok) {
+       const errorData = await response.json();
+       throw new Error(errorData.error || "Failed to get response");
+     }
+     
+     const data = await response.json();
+     const aiResponse = data.reply || "No response received.";
+     
+     setChatMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
+     
+     // Refresh data after chat
+     await fetchAlertBotData();
+     
+   } catch (error) {
+     console.error("Chat error:", error);
+     setChatMessages(prev => [...prev, { 
+       role: "assistant", 
+       content: "⚠️ Network error. Please try again." 
+     }]);
+   } finally {
+     setIsChatLoading(false);
+   }
+ };
+ 
    const sendQuickQuestion = (question: string) => {
-    setChatInput(question);
-    setTimeout(() => sendChatMessage(), 100);
-  };
-
-  
-
-  // END New bot
+     setChatInput(question);
+     setTimeout(() => sendChatMessage(), 100);
+   };
+ 
+   const isMarkdownTable = (text: string) => {
+   const lines = text.split('\n');
+   let count = 0;
+   for (const l of lines) {
+     const t = l.trim();
+     if (t.startsWith('|') && t.endsWith('|')) count++;
+   }
+   return count >= 2;
+ };
+ 
+   const BotMessageRenderer = ({ content }: { content: string }) => {
+   const renderMarkdownTable = (text: string) => {
+     const lines = text.split('\n');
+     let prefixLines: string[] = [];
+     let tables: string[] = [];
+     let currentTable = '';
+     let inTable = false;
+     
+     for (const line of lines) {
+       const t = line.trim();
+       if (t.startsWith('|') && t.endsWith('|')) {
+         if (!inTable) {
+           inTable = true;
+           currentTable = '';
+         }
+         currentTable += line + '\n';
+       } else {
+         if (inTable) {
+           inTable = false;
+           tables.push(currentTable);
+           currentTable = '';
+         }
+         if (!t.startsWith('|')) {
+           prefixLines.push(line);
+         }
+       }
+     }
+     if (inTable && currentTable) {
+       tables.push(currentTable);
+     }
+     
+     // Process prefix text separately
+     const prefixContent = prefixLines.length > 0 
+       ? renderMarkdownText(prefixLines.join('\n'))
+       : null;
+     
+     return (
+       <>
+         {prefixContent}
+         {tables.map((tableContent, tableIndex) => {
+           const tableLines = tableContent.split('\n');
+           let isHeader = true;
+           const TRIGGERS = new Set(['52WH', '52WL', 'ATH', 'ATL', 'MOM', 'RSI_OB', 'RSI_OS', 'BREAKOUT', 'PULLBACK', 'VOL_SPIKE']);
+           let headerCells: string[] = [];
+           let bodyRows: any[] = [];
+           
+           for (const line of tableLines) {
+             const t = line.trim();
+             if (t.includes('---') && t.includes('|')) continue;
+             if (!t.startsWith('|') || !t.endsWith('|')) continue;
+             
+             const cells = t.split('|').filter(c => c.trim() !== '');
+             
+             if (isHeader) {
+               headerCells = cells.map(c => c.trim());
+               isHeader = false;
+             } else {
+               bodyRows.push(cells.map(c => c.trim()));
+             }
+           }
+           
+           return (
+             <div key={tableIndex} style={{ marginTop: tableIndex > 0 ? '20px' : 0 }}>
+               <div className="table-meta">
+                 <div className="table-meta-dot"></div>
+                 <span>Live data · AlertBot</span>
+               </div>
+               <div className="tbl-scroll">
+                 <table className="alerts-tbl">
+                   <thead>
+                     <tr>
+                       {headerCells.map((cell, idx) => (
+                         <th key={idx}>{escapeHtml(cell)}</th>
+                       ))}
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {bodyRows.map((row, rowIdx) => (
+                       <tr key={rowIdx}>
+                         {row.map((cell, cellIdx) => {
+                           const linkMatch = cell.match(/\[(.*?)\]\((.*?)\)/);
+                           if (linkMatch) {
+                             return (
+                               <td key={cellIdx}>
+                                 <a className="tbl-link" href={escapeHtml(linkMatch[2])} target="_blank" rel="noopener">
+                                   {escapeHtml(linkMatch[1])} 
+                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="10" height="10">
+                                     <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                                     <polyline points="15 3 21 3 21 9"/>
+                                     <line x1="10" y1="14" x2="21" y2="3"/>
+                                   </svg>
+                                 </a>
+                               </td>
+                             );
+                           }
+                           
+                           const valUpper = cell.toUpperCase();
+                           if (TRIGGERS.has(valUpper)) {
+                             const cls = valUpper.toLowerCase().replace(/_/g, '-');
+                             return (
+                               <td key={cellIdx}>
+                                 <span className={`badge trig-${cls}`}>{escapeHtml(cell)}</span>
+                               </td>
+                             );
+                           }
+                           
+                           if (valUpper === 'OVERBOUGHT') {
+                             return <td key={cellIdx}><span className="badge ob">Overbought</span></td>;
+                           }
+                           if (valUpper === 'OVERSOLD') {
+                             return <td key={cellIdx}><span className="badge os">Oversold</span></td>;
+                           }
+                           if (valUpper === 'NEUTRAL') {
+                             return <td key={cellIdx}><span className="badge neu">Neutral</span></td>;
+                           }
+                           
+                           let style: React.CSSProperties = {};
+                           if (cellIdx === 0) style = { color: 'var(--ac)', fontWeight: '500' };
+                           else if (cell.startsWith('+')) style = { color: 'var(--ac)' };
+                           else if (cell.startsWith('-') && cell.includes('%')) style = { color: 'var(--red)' };
+                           
+                           return <td key={cellIdx} style={style}>{escapeHtml(cell)}</td>;
+                         })}
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+             </div>
+           );
+         })}
+         <div className="data-note">Source: AlertBot · real-time data</div>
+       </>
+     );
+   };
+ 
+   const renderMarkdownText = (text: string) => {
+     let processed = text
+       .replace(/🔍 Interpreted as ([^\n]+)/g,
+         `<div class="res-badge"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blu)" stroke-width="2.5" stroke-linecap="round" width="11" height="11"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>Interpreted as <strong style="color:var(--tx)">$1</strong></div>`)
+       .replace(/^### (.+)$/gm, `<div style="font-size:13px;font-weight:600;color:var(--tx2);margin:6px 0 3px;">$1</div>`)
+       .replace(/^## (.+)$/gm, `<div style="font-family:var(--fh);font-size:14px;font-weight:600;color:var(--tx);margin:8px 0 4px;">$1</div>`)
+       .replace(/^# (.+)$/gm, `<div style="font-family:var(--fh);font-size:16px;font-weight:700;color:var(--tx);margin:10px 0 6px;">$1</div>`)
+       .replace(/\*\*(.*?)\*\*/g, `<strong style="color:var(--ac);">$1</strong>`)
+       .replace(/`([^`]+)`/g, `<code style="background:rgba(0,0,0,.35);color:var(--tx);padding:1px 5px;border-radius:4px;font-size:11px;font-family:var(--fm);">$1</code>`)
+       .replace(/^[-•▸] (.+)$/gm, `<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--ac);flex-shrink:0;">▸</span><span>$1</span></div>`)
+       .replace(/(\+[\d.]+%)/g, `<span style="color:var(--ac);font-weight:600;">$1</span>`)
+       .replace(/(-[\d.]+%)/g, `<span style="color:var(--red);font-weight:600;">$1</span>`)
+       .replace(/\$([\d,]+\.?\d*[TBMKtbmk]?)/g, `<span style="color:var(--tx);font-family:var(--fm);">$$1</span>`)
+       .replace(/₹([\d,]+\.?\d*[TBMKtbmk]?)/g, `<span style="color:var(--tx);font-family:var(--fm);">₹$1</span>`)
+       .replace(/\n/g, '<br/>');
+     
+     return <div dangerouslySetInnerHTML={{ __html: processed }} />;
+   };
+ 
+   const escapeHtml = (s: string) => {
+     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+   };
+ 
+   if (isMarkdownTable(content)) {
+     return renderMarkdownTable(content);
+   }
+   return renderMarkdownText(content);
+ };
+   
+ 
+   // END New bot
+ 
 
 
 
@@ -2494,151 +2666,177 @@ const extractUrlFromMarkdown = (markdown: string) => {
             {/* CHAT BOX */}
             
       {/* CHAT BOX - FULL SCREEN MODE */}
+{/* CHAT BOX - UPDATED DESIGN WITH WIDER SIZE */}
 {chatOpen && (
-  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md">
-    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl border border-cyan-500/20 flex flex-col overflow-hidden w-full max-w-5xl h-[90vh] max-h-[90vh]">
-      <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800/50">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-            </div>
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-          </div>
-          <div>
-            <h3 className="font-bold text-white text-lg">AryaBot</h3>
-            <p className="text-xs text-cyan-400">AIFinverse</p>
-          </div>
-        </div>
-        <button 
-          onClick={() => setChatOpen(false)} 
-          className="text-slate-400 hover:text-white transition p-2 hover:bg-slate-700 rounded-full"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Chat Messages Area */}
-      <div 
-        ref={chatMessagesRef}
-        className="flex-1 overflow-y-auto p-6 space-y-4"
-      >
-        {chatMessages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}
-          >
-            {msg.role === 'assistant' && (
-              <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div className="w-full max-w-4xl bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden flex flex-col animate-fadeIn">
+      
+      {/* HEADER - COMPACT */}
+      <div className="px-5 py-2.5 border-b border-slate-700/50 bg-slate-900/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
                 <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
-            )}
-            <div
-              className={`rounded-xl px-4 py-3 max-w-[75%] text-base ${
-                msg.role === 'user'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
-                  : 'bg-slate-700/50 text-slate-200'
-              }`}
-            >
-              {msg.role === 'assistant' ? (
-                <div 
-                  className="prose prose-invert prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ 
-                    __html: msg.content
-                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-400">$1</strong>')
-                      .replace(/`([^`]+)`/g, '<code class="bg-black/30 px-1 rounded text-xs">$1</code>')
-                      .replace(/\n/g, '<br/>')
-                      .replace(/•/g, '<span class="text-cyan-400 mr-1">•</span>')
-                  }}
-                />
-              ) : (
-                <div className="whitespace-pre-wrap">{msg.content}</div>
+              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-slate-900"></div>
+            </div>
+            <div>
+              <h3 className="font-semibold text-white text-base">AryaBot</h3>
+              <p className="text-[10px] text-emerald-400">AIFinverse · India Markets</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setChatOpen(false)} 
+            className="text-slate-400 hover:text-white transition p-1 rounded-lg hover:bg-slate-800"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* MESSAGES AREA - TIGHTER PADDING */}
+      <div className="flex-1 min-h-[480px] max-h-[480px] overflow-y-auto px-5 py-3 space-y-3" ref={chatMessagesRef}>
+        {chatMessages.length === 0 && !isChatLoading ? (
+          <div className="flex flex-col items-center justify-center h-full text-center py-8">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center mb-3">
+              <svg className="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <p className="text-slate-300 text-sm">Ask me about Indian stocks,</p>
+            <p className="text-slate-400 text-xs mt-1">alerts, technical levels, or earnings data</p>
+          </div>
+        ) : (
+          chatMessages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
+              {msg.role === 'assistant' && (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0 mr-2.5 mt-0.5">
+                  <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+              )}
+              <div className={`max-w-[80%] ${msg.role === 'user' ? 'order-1' : ''}`}>
+                <div className={`rounded-2xl px-3.5 py-2 ${
+                  msg.role === 'user' 
+                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white' 
+                    : 'bg-slate-800/50 border border-slate-700 text-slate-200'
+                }`}>
+                  {msg.role === 'assistant' ? (
+                    <BotMessageRenderer content={msg.content} />
+                  ) : (
+                    <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                  )}
+                </div>
+                <div className={`text-[10px] text-slate-500 mt-1 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                  {new Date().toLocaleTimeString('en-IN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    timeZone: 'Asia/Kolkata' 
+                  })} IST
+                </div>
+              </div>
+              {msg.role === 'user' && (
+                <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0 ml-2.5 mt-0.5">
+                  <svg className="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
               )}
             </div>
-            {msg.role === 'user' && (
-              <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-            )}
-          </div>
-        ))}
+          ))
+        )}
+        
         {isChatLoading && (
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-              <span className="text-white text-xs font-bold">AI</span>
+          <div className="flex justify-start animate-fadeIn">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0 mr-2.5">
+              <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
             </div>
-            <div className="bg-slate-700/50 rounded-xl px-4 py-3">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl px-3.5 py-2">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce"></div>
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Quick Actions */}
-      <div className="px-6 py-3 border-t border-slate-700 bg-slate-800/30">
-        <div className="flex flex-wrap gap-2">
+      {/* QUICK ACTIONS - COMPACT */}
+      <div className="px-4 py-2 border-t border-slate-700/50 bg-slate-900/30">
+        <div className="flex flex-wrap gap-1.5">
           <button
-            onClick={() => sendQuickQuestion("Show latest LIFO alerts")}
-            className="text-sm bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full hover:bg-cyan-500/20 hover:text-cyan-400 transition"
+            onClick={() => sendQuickQuestion('Show latest India realtime alerts')}
+            className="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full hover:bg-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
+          >
+            🇮🇳 India alerts
+          </button>
+          <button
+            onClick={() => sendQuickQuestion('Show latest LIFO alerts')}
+            className="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full hover:bg-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
           >
             ⚡ LIFO
           </button>
           <button
-            onClick={() => sendQuickQuestion("Performance summary")}
-            className="text-sm bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full hover:bg-cyan-500/20 hover:text-cyan-400 transition"
+            onClick={() => sendQuickQuestion('Performance summary')}
+            className="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full hover:bg-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
           >
             📊 Performance
           </button>
           <button
-            onClick={() => sendQuickQuestion("Show top fractal support levels")}
-            className="text-sm bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full hover:bg-cyan-500/20 hover:text-cyan-400 transition"
+            onClick={() => sendQuickQuestion('Show top fractal support levels')}
+            className="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full hover:bg-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
           >
             🔷 Fractal S/R
           </button>
           <button
-            onClick={() => sendQuickQuestion("Where can I check earnings and TTM PE?")}
-            className="text-sm bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full hover:bg-cyan-500/20 hover:text-cyan-400 transition"
+            onClick={() => sendQuickQuestion('Where can I check earnings and TTM PE?')}
+            className="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full hover:bg-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
           >
             💰 Earnings
           </button>
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="p-6 border-t border-slate-700 bg-slate-800/30">
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !isChatLoading && chatInput.trim()) {
-                e.preventDefault();
-                sendChatMessage();
-              }
-            }}
-            placeholder="Ask about stocks, levels, alerts..."
-            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-base focus:border-cyan-500 focus:outline-none"
-          />
+      {/* INPUT AREA - COMPACT */}
+      <div className="p-3 border-t border-slate-700/50 bg-slate-900/30">
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !isChatLoading && chatInput.trim()) {
+                  e.preventDefault();
+                  sendChatMessage();
+                }
+              }}
+              placeholder="Ask about any stock — price, S/R levels, alerts, earnings…"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
+              autoComplete="off"
+            />
+          </div>
           <button
             onClick={sendChatMessage}
             disabled={isChatLoading || !chatInput.trim()}
-            className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-6 py-3 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition disabled:opacity-50 font-medium"
+            className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-1.5"
           >
             {isChatLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              "Send"
+              <>
+                Send
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </>
             )}
           </button>
         </div>
@@ -2646,7 +2844,9 @@ const extractUrlFromMarkdown = (markdown: string) => {
     </div>
   </div>
 )}
-      
+
+
+
       {/* FOOTER */}
 <footer className="mt-20 py-4 bg-slate-1000/50 text-center text-sm text-slate-500">
   <div className="max-w-7xl mx-auto px-4">
@@ -2695,6 +2895,484 @@ const extractUrlFromMarkdown = (markdown: string) => {
         .animate-fadeIn {
           animation: fadeIn 0.2s ease-out;
         }
+
+        
+  @keyframes float {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  /* Bot Chat Styles */
+
+  @keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+  .chat-shell {
+    width: 100%;
+    max-width: 780px;
+    background: #0f1218;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 88vh;
+    box-shadow: 0 0 0 1px rgba(0,212,160,0.04), 0 32px 80px rgba(0,0,0,0.5);
+  }
+
+  .chat-header {
+    background: #161b24;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 13px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bot-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(0,212,160,0.15), rgba(74,158,255,0.15));
+    border: 1.5px solid rgba(0,212,160,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .online-dot {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #00d4a0;
+    border: 1.5px solid #161b24;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .6; transform: scale(.85); }
+  }
+
+  .bot-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #dde4f0;
+    letter-spacing: -.2px;
+  }
+
+  .bot-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #00d4a0;
+    margin-top: 1px;
+    letter-spacing: .3px;
+  }
+
+  .status-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #8892a4;
+    background: #080b10;
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #00d4a0;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: .25; }
+  }
+
+  .chat-messages {
+    flex: 1;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 3px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.11); border-radius: 2px; }
+
+  .msg-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    animation: msg-in .28s cubic-bezier(.22,.61,.36,1) both;
+  }
+
+  .msg-row.user {
+    flex-direction: row-reverse;
+  }
+
+  @keyframes msg-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .msg-av {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .msg-av.bot {
+    background: rgba(0,212,160,.12);
+    border: 1px solid rgba(0,212,160,.22);
+    color: #00d4a0;
+  }
+
+  .msg-av.user {
+    background: rgba(74,158,255,.12);
+    border: 1px solid rgba(74,158,255,.22);
+    color: #4a9eff;
+  }
+
+  .bubble {
+    border-radius: 14px;
+    padding: 11px 15px;
+    font-size: 13.5px;
+    line-height: 1.65;
+    max-width: 88%;
+  }
+
+  .bubble.bot {
+    background: #161b24;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-bottom-left-radius: 3px;
+  }
+
+  .bubble.user {
+    background: rgba(0,212,160,.10);
+    border: 1px solid rgba(0,212,160,.18);
+    border-bottom-right-radius: 3px;
+  }
+
+  .bubble.wide {
+    max-width: 96%;
+  }
+
+  .msg-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #525d6e;
+    margin-top: 5px;
+    padding-left: 2px;
+  }
+
+  .msg-row.user .msg-time {
+    text-align: right;
+    padding-right: 2px;
+  }
+
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 2px 0;
+  }
+
+  .td {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #525d6e;
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+
+  .td:nth-child(2) { animation-delay: .15s; }
+  .td:nth-child(3) { animation-delay: .30s; }
+
+  @keyframes bounce {
+    0%,80%,100% { opacity: .2; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-4px); }
+  }
+
+  .res-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #8892a4;
+    background: rgba(74,158,255,.07);
+    border: 1px solid rgba(74,158,255,.15);
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+
+  .table-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #8892a4;
+    margin-bottom: 9px;
+  }
+
+  .table-meta-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #00d4a0;
+    animation: blink 2s infinite;
+  }
+
+  .tbl-scroll {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .tbl-scroll::-webkit-scrollbar { height: 3px; }
+  .tbl-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.11); border-radius: 2px; }
+
+  table.alerts-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'DM Mono', monospace;
+    font-size: 11.5px;
+    min-width: 480px;
+  }
+
+  table.alerts-tbl thead tr {
+    background: rgba(255,255,255,.03);
+  }
+
+  table.alerts-tbl th {
+    padding: 9px 12px;
+    text-align: left;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: #525d6e;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    white-space: nowrap;
+  }
+
+  table.alerts-tbl td {
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    color: #dde4f0;
+    white-space: nowrap;
+  }
+
+  table.alerts-tbl tr:last-child td {
+    border-bottom: none;
+  }
+
+  table.alerts-tbl tbody tr:hover td {
+    background: rgba(255,255,255,.025);
+  }
+
+  .tbl-link {
+    color: #4a9eff;
+    text-decoration: none;
+    font-size: 10.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .tbl-link:hover {
+    color: #00d4a0;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .badge.trig-52wh { background: rgba(245,166,35,.12); color: #f5a623; }
+  .badge.trig-52wl { background: rgba(0,212,160,.12); color: #00d4a0; }
+  .badge.trig-ath { background: rgba(167,139,250,.12); color: #a78bfa; }
+  .badge.trig-atl { background: rgba(74,158,255,.12); color: #4a9eff; }
+  .badge.ob { background: rgba(255,79,79,.12); color: #ff4f4f; }
+  .badge.os { background: rgba(0,212,160,.12); color: #00d4a0; }
+  .badge.neu { background: rgba(245,166,35,.12); color: #f5a623; }
+
+  .data-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #525d6e;
+    margin-top: 9px;
+    padding-left: 2px;
+  }
+
+  .quick-bar {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    background: #161b24;
+    flex-shrink: 0;
+  }
+
+  .qpill {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    color: #8892a4;
+    background: #080b10;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 5px 13px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+
+  .qpill:hover {
+    background: rgba(0,212,160,.12);
+    color: #00d4a0;
+    border-color: rgba(0,212,160,.2);
+  }
+
+  .input-bar {
+    padding: 13px 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: #161b24;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .input-wrap {
+    flex: 1;
+    background: #080b10;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    transition: border-color .2s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: rgba(0,212,160,.4);
+  }
+
+  .input-wrap input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: #dde4f0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13.5px;
+  }
+
+  .input-wrap input::placeholder {
+    color: #525d6e;
+  }
+
+  .send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #00d4a0;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s, transform .1s;
+  }
+
+  .send-btn:hover {
+    background: #00a87f;
+  }
+
+  .send-btn:active {
+    transform: scale(.94);
+  }
+
+  .send-btn.loading {
+    background: rgba(0,212,160,.3);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(8,11,16,.3);
+    border-top-color: #080b10;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
       `}</style>
     </div>
   );

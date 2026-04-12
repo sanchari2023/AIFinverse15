@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AryaBot — AIFinverse</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:   #080b10;
+  --s1:   #0f1218;
+  --s2:   #161b24;
+  --s3:   #1c2230;
+  --b1:   rgba(255,255,255,0.06);
+  --b2:   rgba(255,255,255,0.11);
+  --ac:   #00d4a0;
+  --ac2:  #00a87f;
+  --red:  #ff4f4f;
+  --amb:  #f5a623;
+  --blu:  #4a9eff;
+  --pur:  #a78bfa;
+  --tx:   #dde4f0;
+  --tx2:  #8892a4;
+  --tx3:  #525d6e;
+  --fm:   'DM Mono', monospace;
+  --fb:   'Outfit', sans-serif;
+  --fh:   'Syne', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: var(--fb);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 12px 40px;
+  gap: 24px;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 0%, rgba(0,212,160,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 80% 100%, rgba(74,158,255,0.04) 0%, transparent 60%),
+    var(--bg);
+}
+
+/* ── SHELL ───────────────────────────── */
+.chat-shell {
+  width: 100%;
+  max-width: 780px;
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 88vh;
+  box-shadow: 0 0 0 1px rgba(0,212,160,0.04), 0 32px 80px rgba(0,0,0,0.5);
+}
+
+/* ── HEADER ──────────────────────────── */
+.chat-header {
+  background: var(--s2);
+  border-bottom: 1px solid var(--b1);
+  padding: 13px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+
+/* Bot Avatar */
+.bot-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(59,130,246,0.3);
+}
+.bot-avatar svg {
+  width: 26px;
+  height: 26px;
+  stroke: white;
+}
+.online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4a9eff;
+  border: 2px solid var(--s2);
+  animation: pulse-dot 2s ease-in-out infinite;
+  box-shadow: 0 0 5px #4a9eff;
+}
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.6;transform:scale(.85);} }
+
+.bot-name { font-family: var(--fh); font-size: 16px; font-weight: 700; color: var(--tx); letter-spacing: -.2px; }
+.bot-sub  { font-family: var(--fm); font-size: 10px; color: var(--blu); margin-top: 2px; letter-spacing: .3px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+/* Status Chip */
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--fm);
+  font-size: 10px;
+  color: var(--tx2);
+  background: var(--bg);
+  border: 1px solid var(--b1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ac); animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.25;} }
+
+/* Close button */
+.close-chat-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+.close-chat-btn:hover {
+  background: rgba(255,79,79,0.15);
+  border-color: rgba(255,79,79,0.3);
+  transform: scale(1.05);
+}
+.close-chat-btn svg {
+  stroke: #8892a4;
+  transition: stroke 0.2s ease;
+}
+.close-chat-btn:hover svg {
+  stroke: #ff4f4f;
+}
+
+/* ── MESSAGES ────────────────────────── */
+.chat-messages {
+  flex: 1;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+.chat-messages::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+
+.msg-row { display: flex; align-items: flex-start; gap: 11px; animation: msg-in .28s cubic-bezier(.22,.61,.36,1) both; }
+.msg-row.user { flex-direction: row-reverse; }
+@keyframes msg-in { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:none;} }
+
+.msg-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fm); font-size: 10px; font-weight: 500;
+  flex-shrink: 0; margin-top: 2px;
+}
+.msg-av.bot  { background: rgba(0,212,160,.12); border: 1px solid rgba(0,212,160,.22); color: var(--ac); }
+.msg-av.user { background: rgba(74,158,255,.12); border: 1px solid rgba(74,158,255,.22); color: var(--blu); }
+
+.bubble { border-radius: 14px; padding: 11px 15px; font-size: 13.5px; line-height: 1.65; max-width: 88%; }
+.bubble.bot  { background: var(--s2); border: 1px solid var(--b1); border-bottom-left-radius: 3px; }
+.bubble.user { background: rgba(0,212,160,.10); border: 1px solid rgba(0,212,160,.18); border-bottom-right-radius: 3px; }
+.bubble.wide { max-width: 96%; }
+.msg-time { font-family: var(--fm); font-size: 10px; color: var(--tx3); margin-top: 5px; padding-left: 2px; }
+.msg-row.user .msg-time { text-align: right; padding-right: 2px; }
+
+/* typing */
+.typing-dots { display: flex; gap: 4px; padding: 2px 0; }
+.td { width: 6px; height: 6px; border-radius: 50%; background: var(--tx3); animation: bounce 1.2s ease-in-out infinite; }
+.td:nth-child(2){ animation-delay:.15s; }
+.td:nth-child(3){ animation-delay:.30s; }
+@keyframes bounce { 0%,80%,100%{opacity:.2;transform:translateY(0);} 40%{opacity:1;transform:translateY(-4px);} }
+
+/* ── RESOLUTION BADGE ────────────────── */
+.res-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--fm); font-size: 10px; color: var(--tx2);
+  background: rgba(74,158,255,.07); border: 1px solid rgba(74,158,255,.15);
+  padding: 4px 10px; border-radius: 6px; margin-bottom: 10px;
+}
+.res-badge svg { width: 11px; height: 11px; flex-shrink: 0; }
+.res-conf { color: var(--ac); }
+
+/* ── PRICE CARD ──────────────────────── */
+.price-card { background: rgba(255,255,255,.025); border: 1px solid var(--b1); border-radius: 14px; padding: 16px; margin-top: 10px; }
+.pc-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.pc-company { font-family: var(--fh); font-size: 16px; font-weight: 700; color: var(--tx); }
+.pc-symbol  { font-family: var(--fm); font-size: 10px; color: var(--tx2); margin-top: 3px; }
+.pc-badge   { font-family: var(--fm); font-size: 10px; background: rgba(74,158,255,.12); color: var(--blu); border: 1px solid rgba(74,158,255,.2); padding: 3px 9px; border-radius: 6px; flex-shrink: 0; }
+.pc-price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
+.pc-price { font-family: var(--fm); font-size: 34px; font-weight: 500; color: var(--tx); letter-spacing: -1.5px; }
+.pc-change-pill { font-family: var(--fm); font-size: 12.5px; font-weight: 500; padding: 3px 9px; border-radius: 6px; }
+.pill-up   { background: rgba(0,212,160,.12); color: var(--ac); }
+.pill-down { background: rgba(255,79,79,.12);  color: var(--red); }
+.pc-prev { font-family: var(--fm); font-size: 10.5px; color: var(--tx3); margin-bottom: 14px; }
+.pc-divider { height: 1px; background: var(--b1); margin: 12px 0; }
+
+/* ── RANGE BAR ───────────────────────── */
+.range-bar-wrap { margin-bottom: 14px; }
+.range-lbl { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--tx3); margin-bottom: 5px; }
+.range-track { height: 4px; background: var(--b1); border-radius: 2px; position: relative; margin: 5px 0; }
+.range-fill  { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, var(--red) 0%, var(--amb) 50%, var(--ac) 100%); }
+.range-thumb { position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%; background: var(--tx); border: 2px solid var(--s2); transform: translate(-50%,-50%); }
+.range-labels { display: flex; justify-content: space-between; font-family: var(--fm); font-size: 10px; color: var(--tx2); margin-top: 4px; }
+.range-labels .cur { color: var(--tx); font-weight: 500; }
+
+/* ── METRIC GRID ─────────────────────── */
+.metric-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-bottom: 14px; }
+.metric-card { background: rgba(255,255,255,.03); border: 1px solid var(--b1); border-radius: 10px; padding: 9px 11px; }
+.mc-label { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: .8px; color: var(--tx3); margin-bottom: 4px; }
+.mc-value { font-family: var(--fm); font-size: 14px; font-weight: 500; }
+.mc-sub   { font-family: var(--fm); font-size: 10px; color: var(--tx2); margin-top: 2px; }
+.c-green { color: var(--ac);  }
+.c-red   { color: var(--red); }
+.c-amber { color: var(--amb); }
+.c-blue  { color: var(--blu); }
+
+/* ── ACTION BUTTONS ──────────────────── */
+.action-row { display: flex; gap: 7px; flex-wrap: wrap; }
+.act-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--fm); font-size: 11px; color: var(--tx2);
+  background: var(--bg); border: 1px solid var(--b1); border-radius: 6px;
+  padding: 6px 12px; cursor: pointer; text-decoration: none;
+  transition: all .15s; white-space: nowrap;
+}
+.act-btn:hover { border-color: var(--b2); color: var(--tx); }
+.act-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+.act-btn.primary { background: rgba(0,212,160,.08); border-color: rgba(0,212,160,.22); color: var(--ac); }
+.act-btn.primary:hover { background: rgba(0,212,160,.15); }
+
+/* ── ALERTS TABLE ────────────────────── */
+.table-meta { display: flex; align-items: center; gap: 8px; font-family: var(--fm); font-size: 10px; color: var(--tx2); margin-bottom: 9px; }
+.table-meta-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ac); animation: blink 2s infinite; }
+.tbl-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--b1); margin: 8px 0; }
+.tbl-scroll::-webkit-scrollbar { height: 3px; }
+.tbl-scroll::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+.alerts-tbl { width: 100%; border-collapse: collapse; font-family: var(--fm); font-size: 11.5px; min-width: 480px; }
+.alerts-tbl thead tr { background: rgba(255,255,255,.03); }
+.alerts-tbl th { padding: 9px 12px; text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .8px; color: var(--tx3); font-weight: 500; border-bottom: 1px solid var(--b1); white-space: nowrap; }
+.alerts-tbl td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--tx); white-space: nowrap; }
+.alerts-tbl tr:last-child td { border-bottom: none; }
+.alerts-tbl tbody tr:hover td { background: rgba(255,255,255,.025); }
+.sym-cell { color: var(--ac); font-weight: 500; }
+.tbl-link { color: var(--blu); text-decoration: none; font-size: 10.5px; display: inline-flex; align-items: center; gap: 3px; }
+.tbl-link:hover { color: var(--ac); }
+
+/* Trading Levels */
+.trading-levels-tbl { width: 100%; border-collapse: collapse; font-family: var(--fm); font-size: 11px; }
+.trading-levels-tbl thead tr { background: rgba(0,212,160,0.08); }
+.trading-levels-tbl th { padding: 8px 10px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .8px; color: var(--ac); font-weight: 600; border-bottom: 1px solid var(--b1); }
+.trading-levels-tbl td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--tx); }
+.trading-levels-tbl tr:hover td { background: rgba(0,212,160,.05); }
+.level-support { color: var(--ac); font-weight: 500; }
+.level-resistance { color: var(--red); font-weight: 500; }
+
+/* badges */
+.badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 500; white-space: nowrap; }
+.badge.trig-52wh { background: rgba(245,166,35,.12); color: var(--amb); }
+.badge.trig-52wl { background: rgba(0,212,160,.12);  color: var(--ac); }
+.badge.trig-ath  { background: rgba(167,139,250,.12); color: var(--pur); }
+.badge.trig-atl  { background: rgba(74,158,255,.12);  color: var(--blu); }
+.badge.ob  { background: rgba(255,79,79,.12);  color: var(--red); }
+.badge.os  { background: rgba(0,212,160,.12);  color: var(--ac); }
+.badge.neu { background: rgba(245,166,35,.12); color: var(--amb); }
+
+/* ── S/R LEVELS ──────────────────────── */
+.sr-widget { margin-top: 10px; }
+.sr-section-label { font-family: var(--fm); font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--tx3); margin-bottom: 6px; }
+.sr-rows { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.sr-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-left-width: 2px; border-left-style: solid; }
+.sr-row.res { background: rgba(255,79,79,.06); border-left-color: var(--red); }
+.sr-row.sup { background: rgba(0,212,160,.06); border-left-color: var(--ac); }
+.sr-tf    { font-family: var(--fm); font-size: 9px; color: var(--tx3); width: 70px; flex-shrink: 0; }
+.sr-price { font-family: var(--fm); font-size: 13px; font-weight: 500; min-width: 80px; }
+.sr-row.res .sr-price { color: var(--red); }
+.sr-row.sup .sr-price { color: var(--ac); }
+.sr-info  { font-family: var(--fm); font-size: 10px; color: var(--tx2); flex: 1; }
+.sr-bar-wrap { width: 80px; flex-shrink: 0; }
+.sr-bar-track { height: 3px; background: var(--b1); border-radius: 2px; overflow: hidden; }
+.sr-bar-fill  { height: 100%; border-radius: 2px; }
+.sr-row.res .sr-bar-fill { background: var(--red); }
+.sr-row.sup .sr-bar-fill { background: var(--ac); }
+.sr-score { font-family: var(--fm); font-size: 9px; color: var(--tx3); margin-top: 2px; }
+
+/* ── EARNINGS TABLE ──────────────────── */
+.earnings-tbl-wrap { margin-top: 10px; border-radius: 10px; border: 1px solid var(--b1); overflow: hidden; }
+.earnings-tbl { width: 100%; border-collapse: collapse; font-family: var(--fm); font-size: 11.5px; }
+.earnings-tbl th { padding: 8px 12px; text-align: right; font-size: 9.5px; text-transform: uppercase; letter-spacing: .8px; color: var(--tx3); font-weight: 500; background: rgba(255,255,255,.03); border-bottom: 1px solid var(--b1); }
+.earnings-tbl th:first-child { text-align: left; }
+.earnings-tbl td { padding: 8px 12px; text-align: right; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--tx); }
+.earnings-tbl td:first-child { text-align: left; color: var(--tx2); }
+.earnings-tbl tr:last-child td { border-bottom: none; }
+.earnings-tbl tbody tr:hover td { background: rgba(255,255,255,.025); }
+
+/* data note */
+.data-note { font-family: var(--fm); font-size: 10px; color: var(--tx3); margin-top: 9px; padding-left: 2px; }
+
+/* ── QUICK PILLS ─────────────────────── */
+.quick-bar { border-top: 1px solid var(--b1); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 7px; background: var(--s2); flex-shrink: 0; }
+.qpill { font-family: var(--fb); font-size: 12px; color: var(--tx2); background: var(--bg); border: 1px solid var(--b1); border-radius: 20px; padding: 5px 13px; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.qpill:hover { background: rgba(0,212,160,.12); color: var(--ac); border-color: rgba(0,212,160,.2); }
+
+/* ── INPUT BAR ───────────────────────── */
+.input-bar { padding: 13px 16px; border-top: 1px solid var(--b1); background: var(--s2); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.input-wrap { flex: 1; background: var(--bg); border: 1px solid var(--b1); border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; transition: border-color .2s; }
+.input-wrap:focus-within { border-color: rgba(0,212,160,.4); }
+.input-wrap input { flex: 1; background: none; border: none; outline: none; color: var(--tx); font-family: var(--fb); font-size: 13.5px; }
+.input-wrap input::placeholder { color: var(--tx3); }
+.send-btn { width: 38px; height: 38px; border-radius: 10px; background: var(--ac); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s, transform .1s; }
+.send-btn:hover  { background: var(--ac2); }
+.send-btn:active { transform: scale(.94); }
+.send-btn.loading { background: rgba(0,212,160,.3); cursor: not-allowed; pointer-events: none; }
+.send-btn svg { width: 16px; height: 16px; }
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(8,11,16,.3); border-top-color: #080b10; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SECTION SPACING ── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,160,0.3), rgba(0,212,160,0.1), transparent);
+  margin: 16px 0;
+}
+.tbl-scroll + .tbl-scroll {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0,212,160,0.15);
+}
+
+* { scrollbar-width: thin; scrollbar-color: var(--b2) transparent; }
+</style>
+</head>
+<body>
+<div class="page">
+<div class="chat-shell">
+
+  <!-- HEADER -->
+  <!-- HEADER with Dynamic Market Detection -->
+<div class="chat-header">
+  <div class="header-left">
+    <div class="bot-avatar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+      </svg>
+      <div class="online-dot"></div>
+    </div>
+    <div>
+      <div class="bot-name">AryaBot</div>
+      <div class="bot-sub">AIFinverse · India & US Markets</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-chip" id="marketStatus">
+      <div class="chip-dot"></div>
+      <span id="marketName">Loading...</span>
+    </div>
+    <button class="close-chat-btn" onclick="closeChat()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- MESSAGES -->
+<div class="chat-messages" id="chatMessages"></div>
+
+<!-- QUICK PILLS - Dynamic based on market -->
+<div class="quick-bar">
+  <button class="qpill" id="marketAlertsBtn" onclick="sendMarketAlerts()">Loading...</button>
+  <button class="qpill" onclick="sendQuick('Show latest LIFO alerts')">⚡ LIFO</button>
+  <button class="qpill" onclick="sendQuick('Performance summary')">📊 Performance</button>
+  <button class="qpill" onclick="sendQuick('Show top fractal support levels')">🔷 Fractal S/R</button>
+  <button class="qpill" onclick="sendQuick('Where can I check earnings and TTM PE?')">💰 Earnings</button>
+</div>
+
+<!-- INPUT BAR -->
+<div class="input-bar">
+  <div class="input-wrap">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0">
+      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    <input type="text" id="chatInput" placeholder="Ask about any stock — price, S/R levels, alerts, earnings…" autocomplete="off"/>
+  </div>
+  <button class="send-btn" id="sendBtn" onclick="sendMsg()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#080b10" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#080b10"/>
+    </svg>
+  </button>
+</div>
+
+</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════════ */
+const ALERTBOT_URL = '/alertbot';
+
+/* ═══════════════════════════════════════════════════════════
+   MARKET DETECTION
+═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   MARKET DETECTION
+═══════════════════════════════════════════════════════════ */
+
+let currentMarket = 'india'; // Default
+
+function detectMarketFromURL() {
+  const path = window.location.pathname;
+  console.log('Current path:', path);
+  
+  if (path.includes('live-alerts-us') || path.includes('/us/') || path.includes('US')) {
+    currentMarket = 'us';
+  } else if (path.includes('live-alerts-india') || path.includes('/india/') || path.includes('India')) {
+    currentMarket = 'india';
+  } else {
+    // Check parent URL if in iframe
+    try {
+      const parentUrl = document.referrer;
+      if (parentUrl.includes('live-alerts-us')) {
+        currentMarket = 'us';
+      } else if (parentUrl.includes('live-alerts-india')) {
+        currentMarket = 'india';
+      }
+    } catch(e) {}
+  }
+  
+  updateMarketDisplay();
+  console.log('Market detected:', currentMarket);
+}
+
+function updateMarketDisplay() {
+  const marketNameSpan = document.getElementById('marketName');
+  const marketAlertsBtn = document.getElementById('marketAlertsBtn');
+  const marketStatus = document.getElementById('marketStatus');
+  
+  if (marketNameSpan) {
+    marketNameSpan.innerHTML = `${currentMarket === 'india' ? 'India' : 'US'} Market`;
+  }
+  
+  if (marketAlertsBtn) {
+    if (currentMarket === 'india') {
+      marketAlertsBtn.innerHTML = '🇮🇳 India Alerts';
+    } else {
+      marketAlertsBtn.innerHTML = '🇺🇸 US Alerts';
+    }
+  }
+  
+  // Update market hours
+  const now = new Date();
+  let isOpen = false;
+  
+  if (currentMarket === 'india') {
+    const istHour = new Date(now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })).getHours();
+    isOpen = (istHour >= 9 && istHour < 15) || (istHour === 15 && now.getMinutes() <= 30);
+  } else {
+    const estHour = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' })).getHours();
+    isOpen = (estHour >= 9 && estHour < 16);
+  }
+  
+  if (marketStatus) {
+    if (isOpen) {
+      marketStatus.style.background = 'rgba(0,212,160,0.1)';
+      marketStatus.style.borderColor = 'rgba(0,212,160,0.3)';
+    } else {
+      marketStatus.style.background = 'rgba(255,79,79,0.1)';
+      marketStatus.style.borderColor = 'rgba(255,79,79,0.3)';
+    }
+  }
+}
+
+function sendMarketAlerts() {
+  if (currentMarket === 'india') {
+    sendQuick('Show latest India realtime alerts');
+  } else {
+    sendQuick('Show latest US realtime alerts');
+  }
+}
+
+// Listen for messages from parent React app
+window.addEventListener('message', (event) => {
+  if (event.origin !== window.location.origin && !event.origin.includes('localhost')) {
+    return;
+  }
+  const message = event.data;
+  if (message.type === 'SET_MARKET') {
+    currentMarket = message.market;
+    updateMarketDisplay();
+  }
+});
+
+
+function updateMarketDisplay() {
+  const marketNameSpan = document.getElementById('marketName');
+  const marketAlertsBtn = document.getElementById('marketAlertsBtn');
+  
+  if (marketNameSpan) {
+    marketNameSpan.innerHTML = `${currentMarket === 'india' ? 'India' : 'US'} Market`;
+  }
+  
+  if (marketAlertsBtn) {
+    marketAlertsBtn.innerHTML = currentMarket === 'india' ? '🇮🇳 India Alerts' : '🇺🇸 US Alerts';
+  }
+}
+
+function sendMarketAlerts() {
+  sendQuick(currentMarket === 'india' ? 'Show latest India realtime alerts' : 'Show latest US realtime alerts');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let chatHistory = [];
+let isLoading = false;
+let typingEl = null;
+
+const msgs = document.getElementById('chatMessages');
+const input = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  detectMarketFromURL();
+  showTyping();
+  fetch(`${ALERTBOT_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: 'Hello' }] })
+  })
+    .then(res => res.ok ? res.json() : null)
+    .then(data => {
+      hideTyping();
+      const reply = data?.reply || '👋 Hello! Ask me about any stock — price, S/R levels, alerts, earnings.';
+      chatHistory.push({ role: 'assistant', content: reply });
+      addBotMsg(reply);
+    })
+    .catch(() => {
+      hideTyping();
+      const fallback = '👋 Hello! I\'m **AryaBot**. Ask me about any stock — price, fractal S/R levels, live alerts, earnings data.';
+      chatHistory.push({ role: 'assistant', content: fallback });
+      addBotMsg(fallback);
+    });
+});
+
+async function sendMsg() {
+  const text = input.value.trim();
+  if (!text || isLoading) return;
+
+  addUserMsg(text);
+  chatHistory.push({ role: 'user', content: text });
+  input.value = '';
+  setBusy(true);
+  showTyping();
+
+  try {
+    const res = await fetch(`${ALERTBOT_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory })
+    });
+    hideTyping();
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const reply = data.reply || 'No response received.';
+    chatHistory.push({ role: 'assistant', content: reply });
+    addBotMsg(reply);
+  } catch (e) {
+    hideTyping();
+    addBotMsg('⚠️ Network error — please try again.');
+  }
+  setBusy(false);
+}
+
+function sendQuick(q) {
+  input.value = q;
+  sendMsg();
+}
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+
+function setBusy(v) {
+  isLoading = v;
+  if (v) {
+    sendBtn.classList.add('loading');
+    sendBtn.innerHTML = '<div class="spinner"></div>';
+  } else {
+    sendBtn.classList.remove('loading');
+    sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#080b10" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="#080b10"/></svg>';
+  }
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) + ' IST';
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function scrollBottom() {
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  if (typingEl) return;
+  typingEl = document.createElement('div');
+  typingEl.className = 'msg-row';
+  typingEl.innerHTML = `<div class="msg-av bot">AI</div><div class="bubble bot" style="padding:14px 16px;"><div class="typing-dots"><div class="td"></div><div class="td"></div><div class="td"></div></div></div>`;
+  msgs.appendChild(typingEl);
+  scrollBottom();
+}
+
+function hideTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+}
+
+function addUserMsg(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = `<div class="msg-av user">U</div><div><div class="bubble user">${escHtml(text)}</div><div class="msg-time">${getTime()}</div></div>`;
+  msgs.appendChild(row);
+  scrollBottom();
+}
+
+function addBotMsg(content) {
+  const { html, wide } = renderBotMessage(content);
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  row.innerHTML = `<div class="msg-av bot">AI</div><div><div class="bubble bot${wide ? ' wide' : ''}">${html}</div><div class="msg-time">${getTime()}</div></div>`;
+  msgs.appendChild(row);
+  scrollBottom();
+}
+
+function closeChat() {
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'CLOSE_CHAT' }, '*');
+  }
+}
+
+function renderMessage(content) {
+  return renderMarkdownText(content);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BOT MESSAGE RENDERER
+═══════════════════════════════════════════════════════════ */
+function renderBotMessage(content) {
+  if (isMarkdownTable(content)) return { html: renderMarkdownTable(content), wide: true };
+  return { html: renderMarkdownText(content), wide: false };
+}
+
+function isMarkdownTable(content) {
+  const lines = content.split('\n');
+  let n = 0;
+  for (const l of lines) {
+    if (l.trim().startsWith('|') && l.trim().endsWith('|')) n++;
+  }
+  return n >= 2;
+}
+
+function renderMarkdownTable(content) {
+  const lines = content.split('\n');
+  const tableSections = [];
+  let currentSection = [];
+  let inTable = false;
+  
+  for (const line of lines) {
+    const t = line.trim();
+    if (t.startsWith('|') && t.endsWith('|')) {
+      inTable = true;
+      currentSection.push(line);
+    } else {
+      if (inTable && currentSection.length > 0) {
+        tableSections.push([...currentSection]);
+        currentSection = [];
+        inTable = false;
+      }
+      if (t.length > 0 && !t.startsWith('|')) {
+        if (currentSection.length > 0 || tableSections.length === 0) {
+          currentSection.push(line);
+        } else {
+          tableSections.push([line]);
+        }
+      }
+    }
+  }
+  if (currentSection.length > 0) tableSections.push(currentSection);
+  if (tableSections.length <= 1) return renderSingleTable(content, lines);
+  
+  let combinedHtml = '';
+  for (let i = 0; i < tableSections.length; i++) {
+    const sectionLines = tableSections[i];
+    const hasTable = sectionLines.some(l => l.trim().startsWith('|') && l.trim().endsWith('|'));
+    combinedHtml += hasTable ? renderSingleTable(sectionLines.join('\n'), sectionLines) : renderMarkdownText(sectionLines.join('\n'));
+    if (i < tableSections.length - 1) combinedHtml += `<div style="height:24px;"></div><div class="section-divider"></div><div style="height:8px;"></div>`;
+  }
+  return combinedHtml;
+}
+
+function renderSingleTable(content, lines) {
+  const isAlertTable = content.includes('Symbol') && content.includes('Trigger');
+  const isTradingLevels = content.includes('Price') && content.includes('Type');
+  
+  let metaText = '📊 Live Data · AlertBot';
+  let tableClass = 'alerts-tbl';
+  if (isAlertTable) metaText = '🔔 Real-time Alerts';
+  if (isTradingLevels) { metaText = '🎯 Trading Levels'; tableClass = 'trading-levels-tbl'; }
+  
+  let html = `<div class="table-meta"><div class="table-meta-dot"></div><span>${metaText}</span></div>`;
+  html += `<div class="tbl-scroll"><table class="${tableClass}"><thead><tr>`;
+  let isHeader = true;
+  const TRIGGERS = new Set(['52WH','52WL','ATH','ATL']);
+  
+  for (const line of lines) {
+    const t = line.trim();
+    if (t.includes('---') || !t.startsWith('|') || !t.endsWith('|')) continue;
+    const cells = t.split('|').filter(c => c.trim() !== '');
+    if (isHeader) {
+      cells.forEach(c => html += `<th>${escHtml(c.trim())}</th>`);
+      html += `</tr></thead><tbody>`;
+      isHeader = false;
+    } else {
+      html += `</tr>`;
+      cells.forEach((c, i) => {
+        const val = c.trim();
+        const linkMatch = val.match(/\[(.*?)\]\((.*?)\)/);
+        if (linkMatch) {
+          html += `<td><a class="tbl-link" href="${escHtml(linkMatch[2])}" target="_blank">${escHtml(linkMatch[1])} ↗</a></td>`;
+        } else if (TRIGGERS.has(val.toUpperCase())) {
+          const cls = val.toLowerCase();
+          html += `<td><span class="badge trig-${cls}">${escHtml(val)}</span></td>`;
+        } else if (val.toUpperCase() === 'OVERBOUGHT') {
+          html += `<td><span class="badge ob">Overbought</span></td>`;
+        } else if (val.toUpperCase() === 'OVERSOLD') {
+          html += `<td><span class="badge os">Oversold</span></td>`;
+        } else {
+          let style = '';
+          if (i === 0) style = 'color:var(--ac);font-weight:500;';
+          else if (val.startsWith('+')) style = 'color:var(--ac);';
+          else if (val.startsWith('-')) style = 'color:var(--red);';
+          html += `<td style="${style}">${escHtml(val)}</td>`;
+        }
+      });
+      html += `</tr>`;
+    }
+  }
+  html += `</tbody></table></div><div class="data-note">Source: AlertBot · Real-time data</div>`;
+  return html;
+}
+
+function renderMarkdownText(raw) {
+  return raw
+    .replace(/🔍 Interpreted as ([^\n]+)/g, `<div class="res-badge"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blu)" stroke-width="2.5" width="11" height="11"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>Interpreted as <strong style="color:var(--tx)">$1</strong></div>`)
+    .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--ac);">$1</strong>')
+    .replace(/\n/g, '<br/>');
+}
+</script>
+</body>
+</html>
