@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { getStrapiArticles } from "@/services/strapi";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,19 @@ import {
   MessageCircle
 } from "lucide-react";
 import { api } from "@/services/api";
+
+
+interface StrapiArticle {
+  id: number;
+  title: string;
+  description: string;
+  descriptionPlainText: string;
+  descriptionPlainTextLength: number;
+  date: string;
+  author: string;
+  category: string;
+  image: string | null;
+}
 
 
 const ARTICLE_HIKING = "hiking-life";
@@ -67,6 +81,82 @@ export default function Newsletter() {
   const [, setLocation] = useLocation();
 
   const [showEmptyMessage, setShowEmptyMessage] = useState(false);
+
+  // Add these with your other useState declarations
+const [strapiArticles, setStrapiArticles] = useState<any[]>([]);
+const [loadingStrapi, setLoadingStrapi] = useState(true);
+const [expandedStrapiArticles, setExpandedStrapiArticles] = useState<{ [key: number]: boolean }>({});
+const [hoveredStrapiImage, setHoveredStrapiImage] = useState<number | null>(null);
+const [sharedArticleType, setSharedArticleType] = useState<'hardcoded' | 'strapi' | null>(null);
+const [isStrapiShared, setIsStrapiShared] = useState(false);
+
+
+// Read shared article from sessionStorage (set by top-level code)
+useEffect(() => {
+  const storedArticle = sessionStorage.getItem('newsletter_article');
+  console.log("🔍 Reading from sessionStorage:", storedArticle);
+  
+  if (storedArticle && storedArticle.startsWith('strapi-')) {
+    const strapiId = parseInt(storedArticle.replace('strapi-', ''));
+    console.log("🎯 Shared Strapi article detected from storage:", strapiId);
+    
+    setIsSharedView(true);
+    setExpandedStrapiArticles({ [strapiId]: true });
+    
+    // Collapse hardcoded articles
+    setExpandedArticle1(false);
+    setExpandedArticle2(false);
+    setExpandedArticle3(false);
+    setExpandedArticle4(false);
+    setExpandedArticle5(false);
+    setExpandedArticle6(false);
+    
+    // Clear the storage so it doesn't affect next time
+    sessionStorage.removeItem('newsletter_article');
+    localStorage.removeItem('newsletter_article');
+    document.cookie = 'newsletter_article=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+  }
+}, []);
+
+
+
+//strapi fuction
+
+// Toggle expand/collapse for Strapi articles
+const toggleStrapiArticle = (articleId: number) => {
+  setExpandedStrapiArticles(prev => ({
+    ...prev,
+    [articleId]: !prev[articleId]
+  }));
+};
+
+
+// Handle share for Strapi articles
+const handleStrapiShareClick = (articleId: number, e: React.MouseEvent) => {
+  e.stopPropagation();
+  setShowShare(showShare === `strapi-${articleId}` ? null : `strapi-${articleId}`);
+};
+
+// Get share links for Strapi articles
+const getStrapiShareLinks = (articleId, articleTitle) => {
+  const baseUrl = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3000' 
+    : 'https://aifinverse.com';
+  
+  const shareUrl = `${baseUrl}/newsletter?share=strapi-${articleId}`;
+  const message = `Check out this article: ${articleTitle}\n\n${shareUrl}`;
+  const encodedMessage = encodeURIComponent(message);
+
+  return {
+    whatsapp: `https://api.whatsapp.com/send?text=${encodedMessage}`,
+    telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(articleTitle)}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+    copy: shareUrl,
+  };
+};
+
+//........................................strapi function end.....................................//
+
 
   const hasProcessed = useRef(false);
 
@@ -145,6 +235,14 @@ useEffect(() => {
   if (article && !hasProcessed.current) {
     console.log("🎯 Expanding article:", article);
     hasProcessed.current = true;
+
+    // Check if it's a Strapi article (starts with "strapi-")
+  if (article.toString().startsWith('strapi-')) {
+    // Don't do anything here - let the Strapi useEffect handle it
+    console.log("Strapi article detected, skipping hardcoded expansion");
+    return;
+  }
+
     setIsSharedView(true);
 
     // Collapse all first
@@ -185,7 +283,69 @@ useEffect(() => {
 }, []);
   
   
+//......................STRAPI........................//
 
+// ✅ CORRECTED: Fetch articles from Strapi on page load
+useEffect(() => {
+  async function loadStrapiArticles() {
+    setLoadingStrapi(true);
+    const articles = await getStrapiArticles();
+    setStrapiArticles(articles);
+    setLoadingStrapi(false);
+  }
+  loadStrapiArticles();
+}, []);
+
+
+
+// This must run FIRST - before the URL is cleared
+useEffect(() => {
+  // Get the share parameter directly from window.location
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareParam = urlParams.get('share');
+  
+  console.log("🔍 EARLY CHECK - shareParam:", shareParam);
+  
+  if (shareParam && shareParam.startsWith('strapi-')) {
+    const strapiId = parseInt(shareParam.replace('strapi-', ''));
+    console.log("🎯 Shared Strapi article detected EARLY:", strapiId);
+    
+    // Set all states immediately
+    setIsSharedView(true);
+    setExpandedStrapiArticles({ [strapiId]: true });
+    
+    // Collapse hardcoded articles
+    setExpandedArticle1(false);
+    setExpandedArticle2(false);
+    setExpandedArticle3(false);
+    setExpandedArticle4(false);
+    setExpandedArticle5(false);
+    setExpandedArticle6(false);
+  }
+}, []); 
+
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const shareParam = params.get('share');
+  
+  console.log("🔍 Strapi useEffect - shareParam:", shareParam);
+  
+  // Only run if not already handled by the early useEffect
+  if (shareParam && shareParam.startsWith('strapi-') && Object.keys(expandedStrapiArticles).length === 0) {
+    const strapiId = parseInt(shareParam.replace('strapi-', ''));
+    console.log("🎯 Shared Strapi article detected (fallback):", strapiId);
+    setIsSharedView(true);
+    setExpandedStrapiArticles({ [strapiId]: true });
+    setExpandedArticle1(false);
+    setExpandedArticle2(false);
+    setExpandedArticle3(false);
+    setExpandedArticle4(false);
+    setExpandedArticle5(false);
+    setExpandedArticle6(false);
+  }
+}, []);
+
+//.....................END STRAPI.......................................//
 
 
   const handleSubscribe = async () => {
@@ -331,8 +491,8 @@ useEffect(() => {
           )}
 
           {/*------------------   ARTICLES ------------------  */}
-      
-          {isSharedView && (
+
+                {isSharedView && (
   <div className="mb-6">
     <a
       href="/newsletter"
@@ -342,6 +502,193 @@ useEffect(() => {
     </a>
   </div>
 )}
+
+  
+
+{/*------------------   STRAPI ARTICLES (NEW - SHOW ON TOP) ------------------  */}
+
+{/* Loading state */}
+{loadingStrapi && (
+  <div className="mb-8 p-4 bg-slate-800/40 rounded-lg text-center">
+    <p className="text-cyan-400 text-sm">Loading new articles from CMS...</p>
+  </div>
+)}
+
+{/* Display Strapi articles */}
+{!loadingStrapi && strapiArticles.map((article: StrapiArticle) => {
+const shouldShowArticle = !isSharedView || expandedStrapiArticles[article.id];
+  const isExpanded = expandedStrapiArticles[article.id];
+  const descriptionLength = article.descriptionPlainTextLength || article.descriptionPlainText?.length || 0;
+  const shouldTruncate = descriptionLength > 200;
+
+  console.log("Article ID:", article.id, "isSharedView:", isSharedView, "expandedStrapiArticles:", expandedStrapiArticles, "shouldShow:", !isSharedView || expandedStrapiArticles[article.id]);
+
+  if (!shouldShowArticle) return null;
+  
+  // Share links for this article
+  const baseUrl = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3000' 
+    : 'https://aifinverse.com';
+
+  const shareUrl = `${baseUrl}/newsletter`;
+  const shareMessage = `Check out this article: ${article.title}\n\n${shareUrl}`;
+  const encodedMessage = encodeURIComponent(shareMessage);
+  
+  return (
+    <section key={`strapi-${article.id}`} className="mb-16">
+      <div 
+  className="p-6 bg-slate-800/60 border border-slate-700/50 rounded-xl backdrop-blur-sm"
+  style={{ paddingLeft: '3rem', paddingRight: '1.5rem' }}
+>
+        
+        {/* Header with date, read time, author, and SHARE BUTTON */}
+        <div className="flex items-center gap-4 text-sm text-gray-400 mb-6 flex-wrap border-b border-slate-700/50 pb-4">
+          <span className="flex items-center gap-1.5">
+            <span className="text-lg">📅</span>
+            <span>{article.date}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-lg">⏱</span>
+            <span>{Math.ceil(descriptionLength / 1000) || 1} min read</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-lg">✍️</span>
+            <span className="text-cyan-300">{article.author}</span>
+          </span>
+          <span className="ml-auto flex items-center gap-2">
+            
+            {/* Share Button */}
+<div className="relative">
+  <button 
+    onClick={(e) => {
+      e.stopPropagation();
+      setShowShare(showShare === `strapi-${article.id}` ? null : `strapi-${article.id}`);
+    }}
+    className="flex items-center gap-1 px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 rounded-lg text-gray-300 text-xs transition-all duration-200"
+  >
+    <Share2 size={12} />
+    Share
+  </button>
+  
+  {/* Share Options Panel */}
+  {showShare === `strapi-${article.id}` && (
+    <div className="absolute right-0 top-8 z-50" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-xl min-w-[140px]">
+        <h4 className="text-white font-semibold text-xs mb-2">Share Article</h4>
+        <div className="space-y-1">
+          {/* WhatsApp */}
+          <a
+            href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Check out this article: ${article.title}\n\n${baseUrl}/newsletter?share=strapi-${article.id}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-2 py-1.5 bg-emerald-900/20 border border-emerald-800/30 rounded text-emerald-300 text-xs hover:bg-emerald-900/30 transition-colors"
+          >
+            <img src="/images/whatsapp.png" alt="WhatsApp" className="w-3 h-3" />
+            WhatsApp
+          </a>
+          
+          {/* Telegram */}
+          <a
+            href={`https://t.me/share/url?url=${encodeURIComponent(`${baseUrl}/newsletter?share=strapi-${article.id}`)}&text=${encodeURIComponent(article.title)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-2 py-1.5 bg-sky-900/20 border border-sky-800/30 rounded text-sky-300 text-xs hover:bg-sky-900/30 transition-colors"
+          >
+            <img src="/images/telegram.png" alt="Telegram" className="w-3 h-3" />
+            Telegram
+          </a>
+          
+          {/* LinkedIn */}
+          <a
+            href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${baseUrl}/newsletter?share=strapi-${article.id}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-2 py-1.5 bg-blue-900/20 border border-blue-800/30 rounded text-blue-300 text-xs hover:bg-blue-900/30 transition-colors"
+          >
+            <img src="/images/linkedin.png" alt="LinkedIn" className="w-3 h-3" />
+            LinkedIn
+          </a>
+          
+          {/* Copy Link */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(`${baseUrl}/newsletter?share=strapi-${article.id}`);
+              setShowShare(null);
+            }}
+            className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/30 border border-slate-600/30 rounded text-gray-300 text-xs hover:bg-slate-700/40 transition-colors"
+          >
+            <Copy size={12} />
+            Copy Link
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+            </div>
+          </span>
+        </div>
+        
+        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex-1 min-w-0">
+    
+    {/* Category Badge */}
+    <div className="mb-6">
+      <div className="inline-block px-3 py-1 bg-emerald-900/30 text-emerald-300 rounded-full text-xs font-medium mb-3 border border-emerald-800/50">
+        {article.category}
+      </div>
+      <h3 className="text-2xl font-bold text-white leading-tight break-words">
+        {article.title}
+      </h3>
+    </div>
+
+    
+    {/* Description */}
+
+<div className="strapi-article-content w-full text-left">
+  <div 
+    dangerouslySetInnerHTML={{ 
+      __html: isExpanded 
+        ? article.description  // Show FULL when expanded
+        : (article.descriptionPlainTextLength > 200 
+            ? article.description.substring(0, 1000) + "..."  // Show preview when collapsed
+            : article.description)  // Show full if short
+    }} 
+  />
+</div>
+
+
+{/* Read More/Less Button */}
+{shouldTruncate && !isSharedView && (
+  <button
+    onClick={() => toggleStrapiArticle(article.id)}
+    className="mt-8 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-cyan-400 font-medium transition-all duration-200 flex items-center gap-2 group"
+  >
+    {isExpanded ? (
+      <>
+        <span>Read Less</span>
+        <span className="group-hover:-translate-y-0.5 transition-transform">↑</span>
+      </>
+    ) : (
+      <>
+        <span>Read Full Article</span>
+        <span className="group-hover:translate-y-0.5 transition-transform">↓</span>
+      </>
+    )}
+  </button>
+)}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+})}
+
+
+
+
+  {/*...............................Hardcode ARTICLEs........................................................................... */}    
+    
 
 
                     {/* ARTICLE 1 - HIKING THE INVESTING LIFE */}
