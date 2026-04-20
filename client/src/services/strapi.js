@@ -100,22 +100,31 @@ function getMockArticles() {
 }
 
 // ============================================
-// FORMAT ARTICLE FUNCTION
+// FORMAT ARTICLE FUNCTION (FIXED)
 // ============================================
 
 export function formatArticle(strapiArticle) {
-  const attributes = strapiArticle;
+  // Handle BOTH wrapped (attributes) and unwrapped formats
+  const attributes = strapiArticle.attributes || strapiArticle;
+  
+  // Support both Capital and lowercase field names
+  const title = attributes.Title || attributes.title || "Untitled";
+  const content = attributes.Content || attributes.content;
+  const category = attributes.Category || attributes.category || "General";
+  const date = attributes.date || attributes.Date;
+  const author = attributes.author || attributes.Author;
+  const articleId = attributes.id || strapiArticle.id;
   
   let fullHtml = "";
   let plainText = "";
   
-  log("Processing article:", attributes.Title);
+  log("Processing article:", title);
   
-  if (attributes.Content && Array.isArray(attributes.Content)) {
-    log("Content blocks count:", attributes.Content.length);
+  if (content && Array.isArray(content)) {
+    log("Content blocks count:", content.length);
     
-    for (let i = 0; i < attributes.Content.length; i++) {
-      const block = attributes.Content[i];
+    for (let i = 0; i < content.length; i++) {
+      const block = content[i];
       debug(`Block ${i}:`, block.__component);
       
       // Handle TextBlock
@@ -192,19 +201,19 @@ export function formatArticle(strapiArticle) {
   log("Generated HTML length:", fullHtml.length);
   
   return {
-    id: attributes.id,
-    title: attributes.Title || "Untitled",
+    id: articleId,
+    title: title,
     description: fullHtml || "<p>No description available</p>",
     descriptionPlainText: plainText,
     descriptionPlainTextLength: plainText.length,
-    date: attributes.date,
-    author: attributes.author,
-    category: attributes.Category || "General"
+    date: date,
+    author: author,
+    category: category
   };
 }
 
 // ============================================
-// FETCH ARTICLES FUNCTION
+// FETCH ARTICLES FUNCTION (FIXED)
 // ============================================
 
 export async function getStrapiArticles() {
@@ -227,7 +236,8 @@ export async function getStrapiArticles() {
   }
   
   try {
-    const apiUrl = `${STRAPI_URL}/api/articles?populate[Content][populate]=*`;
+    // FIXED: Use populate=* to get all content including nested fields
+    const apiUrl = `${STRAPI_URL}/api/articles?populate=*`;
     log(`📡 Fetching articles from: ${apiUrl}`);
     
     // Create abort controller for timeout
@@ -256,13 +266,8 @@ export async function getStrapiArticles() {
     });
     
     if (data.data && data.data.length > 0) {
-      // Sort by date descending (newest first)
-      const sortedArticles = [...data.data].sort((a, b) => {
-        const dateA = new Date(a.attributes?.date || a.date);
-        const dateB = new Date(b.attributes?.date || b.date);
-        return dateB - dateA;
-      });
-      const formattedArticles = sortedArticles.map(item => formatArticle(item));
+      // Format articles (no need to sort, API can handle or sort here)
+      const formattedArticles = data.data.map(item => formatArticle(item));
       log(`✅ Successfully formatted ${formattedArticles.length} articles`);
       return formattedArticles;
     }
