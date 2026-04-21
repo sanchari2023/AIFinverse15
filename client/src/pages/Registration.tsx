@@ -1006,7 +1006,7 @@ const handleTermsScroll = () => {
       {/* ================= WELCOME MESSAGE ================= */}
       {showWelcome && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-gradient-to-br from-slate-800 to-slate-900 border border-cyan-500/40 rounded-2xl p-7 shadow-2xl mx-4">
+          <div className="w-full max-w-md bg-gradient-to-br from-slate-800 to-slate-900 border border-cyan-500/40 rounded-2xl p-4 shadow-2xl mx-4">
             <div className="text-center">
               {/* Success Icon */}
               <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
@@ -1058,6 +1058,8 @@ const handleTermsScroll = () => {
       alt="Telegram" 
       className="w-5 h-5" 
     />
+    </div>
+   <div className="flex items-center justify-center gap-2">
     <span className="text-yellow-300 font-bold text-l animate-pulse">
       {market === 'US' && 'on Live Alerts US page'}
       {market === 'India' && 'on Live Alerts India page'}

@@ -161,11 +161,16 @@ if (["/live-alerts-india", "/live-alerts-us"].includes(path)) {
       isPremium: true 
     },
     { 
+      label: "Portfolio", 
+      path: "/portfolio", 
+      isPremium: false,
+      comingSoon: true  
+    },
+    { 
       label: "Market Insights", 
       path: "/newsletter", 
       isPremium: false 
     },
-   
     { 
       label: "About us", 
       path: "/about", 
@@ -247,28 +252,32 @@ if (["/live-alerts-india", "/live-alerts-us"].includes(path)) {
           {!isLoginPage && (
             <>
               {/* CENTER: Desktop Navigation */}
-              <div className="hidden md:flex flex-1 justify-center space-x-1">
-                {navItems.map((item) => (
-                  <button
-                    key={item.path}
-                    onClick={() => {
-                      if (item.isPremium) {
-                        handleNavigation(item.path, item.label);
-                      
-                      } else {
-                        handleStandardNavigation(item.path);
-                      }
-                    }}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                      location === item.path
-                        ? "bg-cyan-500/20 text-cyan-400 border-b-2 border-cyan-500"
-                        : "text-gray-300 hover:text-white hover:bg-slate-800/50"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+<div className="hidden md:flex flex-1 justify-center space-x-1">
+  {navItems.map((item) => (
+    <button
+      key={item.path}
+      onClick={() => {
+        if (item.isPremium) {
+          handleNavigation(item.path, item.label);
+        } else {
+          handleStandardNavigation(item.path);
+        }
+      }}
+      className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 flex flex-col items-center ${
+        location === item.path
+          ? "bg-cyan-500/20 text-cyan-400 border-b-2 border-cyan-500"
+          : "text-gray-300 hover:text-white hover:bg-slate-800/50"
+      }`}
+    >
+      <span>{item.label}</span>
+      {item.comingSoon && (
+        <span className="text-[9px] font-normal text-yellow-400/80 mt-0">
+          coming soon
+        </span>
+      )}
+    </button>
+  ))}
+</div>
 
               {/* RIGHT: Profile + Logout (Desktop) */}
               <div className="hidden md:flex items-center space-x-6">

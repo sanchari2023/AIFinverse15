@@ -70,7 +70,8 @@ const PortfolioCard: React.FC<{
   holdings: number;
   currency: string;
   onClick: () => void;
-}> = ({ flag, title, totalValue, totalInvested, totalPL, totalPLPercent, dailyPL, dailyPLPercent, holdings, currency, onClick }) => {
+  comingSoon?: boolean;
+}> = ({ flag, title, totalValue, totalInvested, totalPL, totalPLPercent, dailyPL, dailyPLPercent, holdings, currency, onClick, comingSoon }) => {
   const isTotalProfit = totalPL >= 0;
   const isDailyProfit = dailyPL >= 0;
   
@@ -83,6 +84,11 @@ const PortfolioCard: React.FC<{
         <div className="flex items-center gap-3">
           <span className="text-4xl">{flag}</span>
           <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+          {comingSoon && (
+      <span className="ml-2 text-xs font-semibold bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+        Coming Soon
+      </span>
+    )}
         </div>
         <i className="fas fa-arrow-right text-gray-400 text-xl"></i>
       </div>
@@ -258,6 +264,7 @@ const Portfolio: React.FC = () => {
                   holdings={india.holdings}
                   currency="₹"
                   onClick={() => setLocation('/india')}
+                  comingSoon={true}
                 />
                 <PortfolioCard
                   flag="🇺🇸"
@@ -271,6 +278,7 @@ const Portfolio: React.FC = () => {
                   holdings={us.holdings}
                   currency="$"
                   onClick={() => setLocation('/us')}
+                  comingSoon={true}
                 />
               </div>
             </div>
