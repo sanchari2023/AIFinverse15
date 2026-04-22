@@ -141,7 +141,10 @@ const PortfolioCard: React.FC<{
       
       {/* Holdings count at bottom - Made clickable */}
       <div className="mt-4 pt-4 border-t border-gray-100">
-        <p className="text-sm text-gray-500">Total Holdings</p>
+       <div className="flex items-center justify-between">
+    <p className="text-sm text-gray-500">Total Holdings</p>
+    <p className="text-s text-blue-400">Click to view details →</p>
+  </div>
         <button 
           onClick={(e) => {
             e.stopPropagation();
